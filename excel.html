@@ -77,8 +77,6 @@
     <div class="wrap">
         <div class="import-part">
             <input type="file" id="excel-file">
-            <!-- <input type="file" id="excel-file" style="display: none">
-            <a href="javascript:selectFile()">导入模版数据</a> -->
             <p class="tips">考勤规则：（下面表格可直接修改考勤配置，两班倒修改正常上下班时间即可）</p>
             <div id="result" contenteditable>
 
@@ -100,14 +98,11 @@
 
     </div>
 
-<!-- <textarea id="area" style="width: 1000px; height:1000px"></textarea> -->
 
 <script>
     var readData = [];
     var optionData = [];
     var transOpt = new Map();
-    var departArr = [['行政部','销售内勤','财务部','研发部','  ','总经办','易安特','技服部','平台组','四川消防组','鑫四海','PMC','SMT','采购部','工程部','焊接组','机加车间','库房','模具组','品质部','主机组','注塑车间','装配车间','内勤体系','气体组','市场部'],
-                     ['admin','sell','finance','dev','wisdom','manager','yiante','tech','platform','sichuanPro','xinsihai','PMC','SMT','purchase','engineer','weld','machineWorkshop','storeHouse','mould','qa','mainMachine','injectWorkshop','fitWorkshop','service','gas','market']];
     
     //给input标签绑定change事件，一上传选中的.xls文件就会触发该函数
     $('#excel-file').change(function(e) {
@@ -137,7 +132,7 @@
             }
 
             readData = persons;
-            console.log(JSON.stringify(readData))
+            // console.log(JSON.stringify(readData))
         };
         // 以二进制方式打开文件
         fileReader.readAsBinaryString(files[0]);
@@ -201,14 +196,39 @@
             item.迟到次数 = lateTimes;
             item.早退次数 = leaveTimes;
             item.异常次数 = abnormal;
-
             delete item.dataList;
 
         })
 
         return tempArr
-        
-        // console.log(tempArr);
+    }
+    
+    // 按部门整理数据
+    function orderDataByDepart(dataArr){
+        var returnData = [];
+        var departArr =Array.from(transOpt.keys());
+        var arrMap = new Map();
+        // 构造map
+        for(var i=0; i< departArr.length; i++){
+            departArr[i] == '销售内勤'?departArr[i]='销售内勤部':null
+            arrMap.set(departArr[i],[])
+           
+        }
+        // 将数据填充到map
+        for(var i=0; i< dataArr.length; i++){
+            var depart = dataArr[i].部门;
+            var arr =  arrMap.get(depart);
+            dataArr[i] ? arr.push(dataArr[i]) : null;
+        }
+        // 将数据拆成一个数组
+        var mapArr = Array.from(arrMap.values());
+        for(var i=0; i< mapArr.length; i++){
+            returnData = returnData.concat(mapArr[i]);
+
+        }
+        // console.log(returnData)
+        return returnData;
+
     }
     
     // 处理时间
@@ -221,7 +241,6 @@
                 returnTimes.push(str);  
             }
         }
-        console.log(returnTimes)
 
         return returnTimes;
 
@@ -314,8 +333,13 @@
     function  exportExcel(){
         if($("#result").find("table").length>0){
             $(".exportTip").css('display','none');
+            // 配置修改
             saveEdit();
-            var newData = handleDatas();
+            // 整合结果数据
+            var resultData = handleDatas();
+            // 按部门归置数据
+            var newData = orderDataByDepart(resultData)
+
             // 添加table预览
             preDataOnTable(newData);
             var download = tableToExcel();
