@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+</head>
+
+<body>
+    <a id="dlink" style="display:none;"></a>
+    <input id="button" type="button" value="Export to Excel">
+    <table id="tables">
+        <caption>表格转excel</caption>
+        <!--可以生成表格的标题-->
+        <thead>
+            <tr>
+                <th>功能</th>
+                <th>功能描述</th>
+                <th>参数取值范围</th>
+                <th title="ESC取消保存，Enter保存">取值</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr index="0">
+                <td style="background:#ccc ">网络图标是否显示</td>
+                <td>根据用户需求适配是否显示网络i图标 开启：在主图及导航界面显示网络图标 关闭：不显示网络图标
+                </td>
+                <td>true：开启false：关闭</td>
+            </tr>
+            <tr index="1">
+                <td>wifi未连接蒙层提醒</td>
+                <td>为了引导用户联网，wifi未连接的情况下，进行强提醒。</td>
+                <td>true：开启false：关闭</td>
+            </tr>
+            <tr index="2">
+                <td>卫星界面是否显示车速值</td>
+                <td>可在查看卫星的详情界面配置是否显示车速值</td>
+                <td>true：开启false：关闭</td>
+            </tr>
+        </tbody>
+    </table>
+    <script type="text/javascript">
+    var tableToExcel = (function() {
+        var uri = 'data:application/vnd.ms-excel;base64,',
+            template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',
+            base64 = function(s) { return window.btoa(unescape(encodeURIComponent(s))) },
+            format = function(s, c) { return s.replace(/{(\w+)}/g, function(m, p) { return c[p]; }) };
+        return function(table, name, filename) {
+            if (!table.nodeType) table = document.getElementById(table);
+            console.log(table.innerHTML)
+            var ctx = { worksheet: name || 'Worksheet', table: table.innerHTML }//此时的innerHTML数据可以自己自定义 比如json转化 只要值要数据符合即可
+
+            document.getElementById("dlink").href = uri + base64(format(template, ctx));
+            document.getElementById("dlink").download = filename;
+            document.getElementById("dlink").click();
+        }
+    });
+
+    var id = "tables",
+        worksheetName = 'sheet',
+        workName = "demo.xls";
+
+    document.getElementById('button').onclick = function() {
+        var download = tableToExcel();
+        download(id, worksheetName, workName)
+    };
+    </script>
+</body>
+
+</html>

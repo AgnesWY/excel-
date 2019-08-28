@@ -5,6 +5,13 @@
     <title>Excel批量处理</title>
     <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.js"></script>
     <script src="https://cdn.bootcss.com/xlsx/0.11.5/xlsx.core.min.js"></script>
+    <!-- <script>
+    var xlsxUtils = (function () { var t = { Binary: { fixdata: function (e) { for (var r = "", t = 0, n = 10240; t < e.byteLength / n; ++t)r += String.fromCharCode.apply(null, new Uint8Array(e.slice(t * n, t * n + n))); return r += String.fromCharCode.apply(null, new Uint8Array(e.slice(t * n))) }, s2ab: function (e) { for (var r = new ArrayBuffer(e.length), t = new Uint8Array(r), n = 0; n != e.length; ++n)t[n] = 255 & e.charCodeAt(n); return r } }, _wb: null, _rABS: !1, import: function (e, r) { this.wb = null; var n = new FileReader; n.onload = function (e) { var n = e.target.result; t._wb = t._rABS ? XLSX.read(btoa(t.Binary.fixdata(n)), { type: "base64" }) : XLSX.read(n, { type: "binary" }), "function" == typeof r && r(t._wb) }, t._rABS ? n.readAsArrayBuffer(e) : n.readAsBinaryString(e) }, getSheetByName: function (e) { return XLSX.utils.sheet_to_json(t._wb.Sheets[e]) }, getSheetByIndex: function () { var e = arguments.length > 0 && void 0 !== arguments[0] ? arguments[0] : 0; return t.getSheetByName(t._wb.SheetNames[e]) }, export: function (e, r) { var n = null; for (var o in e) { var a = t.format2Sheet(e[o]); n = t.format2WB(a, o, n) } return t.format2Blob(n, r) }, readDataHead: function (e) { var r = {}, t = Array.isArray(e) ? Object.keys(e[0]) : e, n = !0, o = !1, a = void 0; try { for (var i, f = t[Symbol.iterator](); !(n = (i = f.next()).done); n = !0) { var u = i.value; r[u] = u } } catch (e) { o = !0, a = e } finally { try { !n && f.return && f.return() } finally { if (o) throw a } } return r }, format2Sheet: function (e, r, n, o) { o = o || Object.keys(e[0]), r = r || 0, n = n || 0; var a = {}; return e.map(function (e, a) { return o.map(function (o, i) { return Object.assign({}, { v: e[o], position: (i + r > 25 ? t.getCharCol(i + r) : String.fromCharCode(65 + (i + r))) + (a + 1 + n) }) }) }).reduce(function (e, r) { return e.concat(r) }).forEach(function (e, r) { return a[e.position] = { v: e.v } }), a }, format2WB: function (e, r, t, n) { r = r || "mySheet"; var o = Object.keys(e); return t || (t = { Sheets: {}, SheetNames: [] }), t.SheetNames.push(r), t.Sheets[r] = Object.assign({}, e, { "!ref": n || o[0] + ":" + o[o.length - 1] }), t }, format2Blob: function (e, r) { return new Blob([t.Binary.s2ab(XLSX.write(e, { bookType: void 0 == r ? "xlsx" : r, bookSST: !1, type: "binary" }))], { type: "" }) }, getCharCol: function (e) { for (var r = "", t = 0; e > 0;)t = e % 26 + 1, r = String.fromCharCode(t + 64) + r, e = (e - t) / 26; return r } }; return t })();
+    </script> -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.15.1/xlsx.core.min.js"></script> -->
+    <!-- <script src="./js/xlsx.full.min.js"></script> -->
+
+
 </head>
 <style>
    
@@ -56,7 +63,13 @@
         height: 480px;
         overflow-y: auto;
     }
-    
+    #preTable{
+        width: 1000px;
+        height: 480px;
+        overflow: auto;
+        display: none;
+
+    }
 
 
 </style>
@@ -73,13 +86,13 @@
             
         </div>
         <div class="option-part">
-            <p class="tips">导出数据：不修改考勤规则配置直接导出，或修改配置后点击导出</p>
+            <p class="tips">导出数据：不修改上下班时间配置直接导出，或修改配置后点击导出。【数据异常】的状态：该打卡时间在某天打卡仅有一次且该时间在工作时间。</p>
             <p class="exportTip">提示：请先导入数据哦</p>
             <button id="exportBtn" class="exportBtn" onclick="exportExcel()">导出数据</button>
         </div>
-        <div>
+        <div style="display:none;">
+            <a id="dlink"></a>
             <table id="preTable">
-
 
             </table>
 
@@ -93,8 +106,7 @@
     var readData = [];
     var optionData = [];
     var transOpt = new Map();
-    // var tagTxt = ['上班缺卡','下班缺卡','迟到','早退','未打卡'];
-    var departArr = [['行政部','销售内勤','财务部','研发部','智慧物联','总经办','易安特','技服部','平台组','四川消防组','鑫四海','PMC','SMT','采购部','工程部','焊接组','机加车间','库房','模具组','品质部','主机组','注塑车间','装配车间','内勤体系','气体组','市场部'],
+    var departArr = [['行政部','销售内勤','财务部','研发部','  ','总经办','易安特','技服部','平台组','四川消防组','鑫四海','PMC','SMT','采购部','工程部','焊接组','机加车间','库房','模具组','品质部','主机组','注塑车间','装配车间','内勤体系','气体组','市场部'],
                      ['admin','sell','finance','dev','wisdom','manager','yiante','tech','platform','sichuanPro','xinsihai','PMC','SMT','purchase','engineer','weld','machineWorkshop','storeHouse','mould','qa','mainMachine','injectWorkshop','fitWorkshop','service','gas','market']];
     
     //给input标签绑定change事件，一上传选中的.xls文件就会触发该函数
@@ -162,6 +174,7 @@
             var normalCount = 0;
             var lateTimes = 0;
             var leaveTimes = 0;
+            var abnormal = 0;
             $(item.dataList).each(function(index,innerItem){
 
                 item[innerItem.dailyDate] = innerItem.flag;
@@ -176,13 +189,18 @@
                     leaveTimes = leaveTimes + 1;
 
                 }
+                if(innerItem.flag && !(innerItem.flag.indexOf('数据异常')< 0)){
+                    abnormal = abnormal + 1;
+
+                }
 
 
             });
-            item.出勤天数 = normalCount+lateTimes+leaveTimes;
+            item.出勤天数 = normalCount+lateTimes+leaveTimes+abnormal;
             item.正常天数 = normalCount;
             item.迟到次数 = lateTimes;
             item.早退次数 = leaveTimes;
+            item.异常次数 = abnormal;
 
             delete item.dataList;
 
@@ -203,6 +221,7 @@
                 returnTimes.push(str);  
             }
         }
+        console.log(returnTimes)
 
         return returnTimes;
 
@@ -214,7 +233,7 @@
             return '未打卡';
         }else{
             
-            console.log("配置数据："+transOpt);
+            // console.log("配置数据："+transOpt);
             var optTimeArr = $.extend(true,[],transOpt.get(depart));
             // var optTimeArr = splitTime(optTime);
             // 针对 两班倒的部门
@@ -297,10 +316,14 @@
             $(".exportTip").css('display','none');
             saveEdit();
             var newData = handleDatas();
-            
-            var newSheet = XLSX.utils.json_to_sheet(newData);
-            var blob = sheet2blob(newSheet,'考勤汇总');
-            createDownLoadLink(blob,'导出的数据.xlsx');
+            // 添加table预览
+            preDataOnTable(newData);
+            var download = tableToExcel();
+            download('preTable', '导出table数据', '考勤');
+
+            // var newSheet = XLSX.utils.json_to_sheet(newData);
+            // var blob = sheet2blob(newSheet,'考勤汇总');
+            // createDownLoadLink(blob,'导出的数据.xlsx');
         } else{
             $(".exportTip").css('display','block');
             $('.exportTip').delay(3000).hide(0);
@@ -315,9 +338,6 @@
         optionData = JSON.parse(data);
         // 整合配置数据
         transOpt = handleOptions(optionData);
-
-        
-
     }
     // 整合配置数据
     function handleOptions(optionData){
@@ -331,6 +351,70 @@
 
 
     }
+    // 预览数据
+    function preDataOnTable(newData){
+        
+        // console.log(newData);
+        var html = '<tr>';
+        var keyArr = Object.keys(newData[0])
+        for(var i=0; i<keyArr.length; i++){
+            html += '<th>'+keyArr[i]+'</th>'
+        }
+        html += '</tr>'
+        $(newData).each(function(index,item){
+            html += '<tr>'
+                for(var i=0; i< keyArr.length; i++){
+                    
+                        if(typeof item[keyArr[i]] =='string' && !(item[keyArr[i]].indexOf('迟到') <0)){
+                            html +='<td style="background:#40e491">'+item[keyArr[i]]+'</td>'
+                        }
+                        else if(typeof item[keyArr[i]] =='string' && !(item[keyArr[i]].indexOf('早退') <0)){
+                            html +='<td style="background:#40e491">'+item[keyArr[i]]+'</td>'
+                        }
+                        else if(typeof item[keyArr[i]] =='string' && !(item[keyArr[i]].indexOf('数据异常') <0)){
+                            html +='<td style="background:#e20236">'+item[keyArr[i]]+'</td>'
+                        }
+                        else if(typeof item[keyArr[i]] =='string' && !(item[keyArr[i]].indexOf('缺卡') <0)){
+                            html +='<td style="background:#e49b40">'+item[keyArr[i]]+'</td>'
+                        } 
+                        else if(typeof item[keyArr[i]] =='string' && !(item[keyArr[i]].indexOf('未打卡') <0)){
+                            html +='<td style="background:#e0dcdd">'+item[keyArr[i]]+'</td>'
+                        }
+                        else if(typeof item[keyArr[i]] =='undefined'){
+                            html +='<td style="background:#e0dcdd">未打卡</td>'
+                        } 
+                        else{
+                            html +='<td>'+item[keyArr[i]]+'</td>'
+                        }
+                   
+                   
+                }
+            html += '</tr>'
+                   
+        });
+        // console.log(html)
+        
+        $("#preTable").append(html);
+
+        // preTable
+
+    }
+    var tableToExcel = (function() {
+        var uri = 'data:application/vnd.ms-excel;base64,',
+            template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',
+            base64 = function(s) { return window.btoa(unescape(encodeURIComponent(s))) },
+            format = function(s, c) { return s.replace(/{(\w+)}/g, function(m, p) { return c[p]; }) };
+        return function(table, name, filename) {
+            if (!table.nodeType) table = document.getElementById(table);
+            // console.log(table.innerHTML)
+            var ctx = { worksheet: name || 'Worksheet', table: table.innerHTML }//此时的innerHTML数据可以自己自定义 比如json转化 只要值要数据符合即可
+
+            document.getElementById("dlink").href = uri + base64(format(template, ctx));
+            document.getElementById("dlink").download = filename;
+            document.getElementById("dlink").click();
+        }
+    });
+
     function readWorkbook(workbook) {
 		var sheetNames = workbook.SheetNames; // 工作表名称集合
 		var worksheet = workbook.Sheets[sheetNames[1]]; // 这里我们只读取第二张sheet
@@ -360,6 +444,19 @@
 			bookSST: false, // 是否生成Shared String Table，官方解释是，如果开启生成速度会下降，但在低版本IOS设备上有更好的兼容性
 			type: 'binary'
 		};
+        // 样式设置
+        // for(var item in workbook.Sheets[sheetName]){
+        //     workbook.Sheets[sheetName][item].s = {
+        //         fill: {
+        //             fgColor: {
+        //                 rgb: 'a4a3a5'
+        //             }
+        //         }
+        
+        //   };
+            
+
+        // }
 		var wbout = XLSX.write(workbook, wopts);
 		var blob = new Blob([s2ab(wbout)], {type:"application/octet-stream"});
 		return blob;
