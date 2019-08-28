@@ -167,6 +167,7 @@
         tempArr = Array.from(dataMap.values())
         $(tempArr).each(function(index,item){
             var normalCount = 0;
+            var lostTimes = 0;
             var lateTimes = 0;
             var leaveTimes = 0;
             var abnormal = 0;
@@ -176,6 +177,9 @@
                 if(innerItem.flag && innerItem.flag == '正常'){
                     normalCount = normalCount + 1;
 
+                }
+                if(innerItem.flag && !(innerItem.flag.indexOf('缺卡')< 0)){
+                    lostTimes = lostTimes + 1;
                 }
                 if(innerItem.flag && !(innerItem.flag.indexOf('迟到')< 0)){
                     lateTimes = lateTimes + 1;
@@ -191,8 +195,9 @@
 
 
             });
-            item.出勤天数 = normalCount+lateTimes+leaveTimes+abnormal;
+            item.出勤天数 = normalCount+lostTimes+lateTimes+leaveTimes+abnormal;
             item.正常天数 = normalCount;
+            item.缺卡天数 = lostTimes;
             item.迟到次数 = lateTimes;
             item.早退次数 = leaveTimes;
             item.异常次数 = abnormal;
