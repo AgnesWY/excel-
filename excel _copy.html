@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Excel批量处理</title>
+    <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.js"></script>
+    <script src="https://cdn.bootcss.com/xlsx/0.11.5/xlsx.core.min.js"></script>
+
+</head>
+<style>
+   
+    .wrap{
+        margin: 0 auto;
+        width : 1000px;
+        font-size: 16px;
+        font-family: 'PuHuiTi-Regular'
+    }
+    #excel-file{
+        padding: 8px 16px;
+        border: solid 1px #ccc;
+        cursor: pointer;
+        
+    }
+    .tips{
+        font-size:12px;
+        padding: 8px 16px;
+        background-color: #ecf8ff;
+        border-radius: 4px;
+        border-left: 5px solid #50bfff;
+        margin: 20px 0;
+
+    }
+    .exportBtn {
+        background: #fff;
+        color: #606266;
+        padding: 8px 16px;
+        border: 1px solid #dcdfe6;
+        cursor: pointer;
+    }
+    .exportBtn:hover {
+        color: #409eff;
+        background: #ecf5ff;
+        border-color: #b3d8ff;
+
+    }
+    .exportTip{
+        display:none;
+        font-size:12px;
+        padding: 8px 16px;
+        color: #f56c6c;
+        background-color: #ecf8ff;
+        border-radius: 4px;
+        border-left: 5px solid #f56c6c;
+        margin: 20px 0;
+    }
+    #result {
+        height: 480px;
+        overflow-y: auto;
+    }
+    #preTable{
+        width: 1000px;
+        height: 480px;
+        overflow: auto;
+        display: none;
+
+    }
+
+
+</style>
+<body>
+    <div class="wrap">
+        <div class="import-part">
+            <input type="file" id="excel-file">
+            <p class="tips">考勤规则：（下面表格可直接修改考勤配置，两班倒修改正常上下班时间即可）</p>
+            <div id="result" contenteditable>
+
+            </div>
+            
+        </div>
+        <div class="option-part">
+            <p class="tips">导出数据：不修改上下班时间配置直接导出，或修改配置后点击导出。【数据异常】的状态：该打卡时间在某天打卡仅有一次且该时间在工作时间。</p>
+            <p class="exportTip">提示：请先导入数据哦</p>
+            <button id="exportBtn" class="exportBtn" onclick="exportExcel()">导出数据</button>
+        </div>
+        <div style="display:none;">
+            <a id="dlink"></a>
+            <table id="preTable">
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+<script>
+   var readData=[];var optionData=[];var transOpt=new Map();$("#excel-file").change(function(c){var b=c.target.files;var a=new FileReader();a.onload=function(h){try{var j=h.target.result;var d=XLSX.read(j,{type:"binary"});var i=[]}catch(k){console.log("文件类型不正确");return}readWorkbook(d);var f="";for(var g in d.Sheets){if(d.Sheets.hasOwnProperty(g)){f=d.Sheets[g]["!ref"];i=i.concat(XLSX.utils.sheet_to_json(d.Sheets[g]));break}}readData=i};a.readAsBinaryString(b[0])});function handleDatas(){var a=new Map();var b=[];$(readData).each(function(c,d){d.statusFlag=judgeStatus(d.部门,d.签到时间);if(!a.has(d.帐号)){a.set(d.帐号,{"账号":d.帐号,"姓名":d.姓名,"部门":d.部门,dataList:[],})}a.get(d.帐号).dataList.push({dailyDate:d.日期,flag:d.statusFlag})});b=Array.from(a.values());$(b).each(function(g,i){var d=0;var e=0;var f=0;var c=0;var h=0;$(i.dataList).each(function(j,k){i[k.dailyDate]=k.flag;if(k.flag&&k.flag=="正常"){d=d+1}if(k.flag&&!(k.flag.indexOf("缺卡")<0)){e=e+1}if(k.flag&&!(k.flag.indexOf("迟到")<0)){f=f+1}if(k.flag&&!(k.flag.indexOf("早退")<0)){c=c+1}if(k.flag&&!(k.flag.indexOf("数据异常")<0)){h=h+1}});i.出勤天数=d+e+f+c+h;i.正常天数=d;i.缺卡天数=e;i.迟到次数=f;i.早退次数=c;i.异常次数=h;delete i.dataList});return b}function orderDataByDepart(f){var e=[];var g=Array.from(transOpt.keys());var h=new Map();for(var c=0;c<g.length;c++){g[c]=="销售内勤"?g[c]="销售内勤部":null;h.set(g[c],[])}for(var c=0;c<f.length;c++){var d=f[c].部门;var a=h.get(d);f[c]?a.push(f[c]):null}var b=Array.from(h.values());for(var c=0;c<b.length;c++){e=e.concat(b[c])}return e}function splitTime(b){var a=[];if(b!=""&&b.indexOf("-")>0){a=b.split("-")}else{if(b!=""){a.push(b)}}return a}function judgeStatus(c,e){var d=splitTime(e);if(d.length==0){return"未打卡"}else{var a=$.extend(true,[],transOpt.get(c));if((c=="机加车间"||c=="注塑车间")&&d.length>1&&returnCompares(d[0],a[1])){var b=[];b.push(a[1]);b.push(a[0]);return compareTimes(b,d)}else{return compareTimes(a,d)}}}function returnCompares(d,c){var b=Date.parse("2018-08-08 "+d);var a=Date.parse("2018-08-08 "+c);return !(d>a)}function compareTimes(b,c){var a=$.extend(true,[],b);var e=$.extend(true,[],c);for(var d=0;d<2;d++){a[d]=Date.parse("2018-08-08 "+a[d]);e[d]=Date.parse("2018-08-08 "+e[d])}if(c.length==1){var f="";if(!(e[0]>a[0])){return"下班缺卡"}if(!(e[0]<a[1])){return"上班缺卡"}if((e[0]>a[0])&&(e[0]<a[1])){return"数据异常"+c[0]}}else{if(!(e[0]>a[0])&&!(e[1]<a[1])){return"正常"}if(!(e[0]>a[0])&&(e[1]<a[1])){var g=formateMilisecond(a[1]-e[1]);return"早退"+g}if((e[0]>a[0])&&!(e[1]<a[1])){var g=formateMilisecond(e[0]-a[0]);return"迟到"+g}}}function exportExcel(){if($("#result").find("table").length>0){$(".exportTip").css("display","none");saveEdit();var b=handleDatas();var c=orderDataByDepart(b);preDataOnTable(c);var a=tableToExcel();a("preTable","导出table数据","考勤")}else{$(".exportTip").css("display","block");$(".exportTip").delay(3000).hide(0)}}function saveEdit(){var a=table2csv($("#result table")[0]);var b=csv2JSON(a);optionData=JSON.parse(b);transOpt=handleOptions(optionData)}function handleOptions(c){var a=new Map();for(var b=0;b<c.length;b++){a.set(c[b].部门,[c[b].上班时间,c[b].下班时间])}return a}function preDataOnTable(d){var c="<tr>";var a=Object.keys(d[0]);for(var b=0;b<a.length;b++){c+="<th>"+a[b]+"</th>"}c+="</tr>";$(d).each(function(e,g){c+="<tr>";for(var f=0;f<a.length;f++){if(typeof g[a[f]]=="string"&&!(g[a[f]].indexOf("迟到")<0)){c+='<td style="background:#40e491">'+g[a[f]]+"</td>"}else{if(typeof g[a[f]]=="string"&&!(g[a[f]].indexOf("早退")<0)){c+='<td style="background:#40e491">'+g[a[f]]+"</td>"}else{if(typeof g[a[f]]=="string"&&!(g[a[f]].indexOf("数据异常")<0)){c+='<td style="background:#e20236">'+g[a[f]]+"</td>"}else{if(typeof g[a[f]]=="string"&&!(g[a[f]].indexOf("缺卡")<0)){c+='<td style="background:#e49b40">'+g[a[f]]+"</td>"}else{if(typeof g[a[f]]=="string"&&!(g[a[f]].indexOf("未打卡")<0)){c+='<td style="background:#e0dcdd">'+g[a[f]]+"</td>"}else{if(typeof g[a[f]]=="undefined"){c+='<td style="background:#e0dcdd">未打卡</td>'}else{c+="<td>"+g[a[f]]+"</td>"}}}}}}}c+="</tr>"});$("#preTable").append(c)}var tableToExcel=(function(){var c="data:application/vnd.ms-excel;base64,",b='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>',a=function(e){return window.btoa(unescape(encodeURIComponent(e)))},d=function(e,f){return e.replace(/{(\w+)}/g,function(g,h){return f[h]})};return function(h,g,f){if(!h.nodeType){h=document.getElementById(h)}var e={worksheet:g||"Worksheet",table:h.innerHTML};document.getElementById("dlink").href=c+a(d(b,e));document.getElementById("dlink").download=f;document.getElementById("dlink").click()}});function readWorkbook(a){var c=a.SheetNames;var d=a.Sheets[c[1]];var b=XLSX.utils.sheet_to_csv(d);document.getElementById("result").innerHTML=csv2table(b)
+}function s2ab(d){var b=new ArrayBuffer(d.length);var a=new Uint8Array(b);for(var c=0;c!=d.length;++c){a[c]=d.charCodeAt(c)&255}return b}function sheet2blob(c,f){f=f||"sheet1";var a={SheetNames:[f],Sheets:{}};a.Sheets[f]=c;var e={bookType:"xlsx",bookSST:false,type:"binary"};var d=XLSX.write(a,e);var b=new Blob([s2ab(d)],{type:"application/octet-stream"});return b}function createDownLoadLink(b,d){if(typeof b=="object"&&b instanceof Blob){b=window.URL.createObjectURL(b)}var a=document.createElement("a");a.href=b;a.download=d||"";var c;if(window.MouseEvent){c=new MouseEvent("click")}else{c=document.createEvent("MouseEvents");c.initMouseEvent("click",true,false,window,0,0,0,0,0,false,false,false,false,0,null)}a.dispatchEvent(c)}function openDownloadDialog(b,d){if(typeof b=="object"&&b instanceof Blob){b=URL.createObjectURL(b)}var a=document.createElement("a");a.href=b;a.download=d||"";var c;if(window.MouseEvent){c=new MouseEvent("click")}else{c=document.createEvent("MouseEvents");c.initMouseEvent("click",true,false,window,0,0,0,0,0,false,false,false,false,0,null)}a.dispatchEvent(c)}function table2csv(b){var a=[];$(b).find("tr").each(function(){var c=[];$(this).find("td").each(function(){c.push($(this).html())});c.shift();a.push(c.join(","))});a.shift();return a.join("\n")}function csv2table(a){var b="<table>";var c=a.split("\n");c.pop();c.forEach(function(g,d){var f=g.split(",");f.unshift(d+1);if(d==0){b+="<tr>";for(var e=0;e<f.length;e++){b+="<th>"+(e==0?"":String.fromCharCode(65+e-1))+"</th>"}b+="</tr>"}b+="<tr>";f.forEach(function(h){b+="<td>"+h+"</td>"});b+="</tr>"});b+="</table>";return b}function csv2sheet(a){var b={};a=a.split("\n");a.forEach(function(d,c){d=d.split(",");if(c==0){b["!ref"]="A1:"+String.fromCharCode(65+d.length-1)+(a.length-1)}d.forEach(function(f,e){b[String.fromCharCode(65+e)+(c+1)]={v:f}})});return b}function removeEmptyArrayEle(a){for(var b=0;b<a.length;b++){if(a[b]==""){a.splice(b,1);b=b-1}}return a}function csv2JSON(c){var b=c.split("\n");var a=[];var h=removeEmptyArrayEle(b[0].split(","));for(var f=1;f<b.length;f++){var g={};var d=removeEmptyArrayEle(b[f].split(","));for(var e=0;e<h.length;e++){g[h[e]]=d[e]}a.push(g)}return JSON.stringify(a)}function formateMilisecond(b){var a=parseInt((b%(1000*60*60*24))/(1000*60*60));var d=parseInt((b%(1000*60*60))/(1000*60));var e=(b%(1000*60))/1000;var c="";a>0?c+=a+"小时":null;d>0?c+=d+"分钟":null;e>0?c+=e+"秒":null;return c};
+</script>
+</body>
+</html> 
