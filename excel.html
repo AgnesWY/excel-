@@ -71,6 +71,10 @@
     <div class="wrap">
         <div class="import-part">
             <input type="file" id="excel-file">
+            <p class="tips">操作步骤1：
+                <br>1、拿到考勤机导出的原始数据 
+                <br>2、将1中的原始数据复制到【模版excel】的原始数据sheet里面
+                <br>3、上面【选择文件】的文件是当前填充新数据过后的【模版excel】文件 
             <p class="tips">考勤规则：（下面表格可直接修改考勤配置，两班倒修改正常上下班时间即可）</p>
             <div id="result" contenteditable>
 
@@ -78,6 +82,11 @@
             
         </div>
         <div class="option-part">
+            <p class="tips">
+                    操作步骤2：
+                <br>4、查看下表部门考勤时间，时间可点击修改 
+                <br>5、确认规则无误后后，点击导出数据</p>
+            
             <p class="tips">导出数据：不修改上下班时间配置直接导出，或修改配置后点击导出。【数据异常】的状态：该打卡时间在某天打卡仅有一次且该时间在工作时间。</p>
             <p class="exportTip">提示：请先导入数据哦</p>
             <button id="exportBtn" class="exportBtn" onclick="exportExcel()">导出数据</button>
@@ -218,16 +227,19 @@
             var depart = dataArr[i].部门;
             var arr =  arrMap.get(depart);
             try{
-                console.log(i+""+dataArr[i].部门+":"+JSON.stringify(dataArr[i]))
-               
-            dataArr[i] ? arr.push(dataArr[i]) : null;
+                // console.log(i+""+dataArr[i].部门+":"+JSON.stringify(dataArr[i]))
+                dataArr[i] ? arr.push(dataArr[i]) : null;
 
 
             }
             catch(err){
+                if(arr== undefined){
+                    alert("数据中的【"+depart+"】部门没有写入考勤规则中，本次导出数据将不存在此部门数据，请务必在【模版excel】添加后再刷新重新操作，否则数据会有问题！");
+                    break;
+                }
                 console.error(err)
-                console.error(depart,arrMap);
-                console.error(arr);
+                // console.error(depart,arrMap);
+                // console.error(arr);
 
             }
            
